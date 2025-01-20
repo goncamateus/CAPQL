@@ -8,3 +8,6 @@
 **/src/**/*.jpeg
 **/__pycache__
 **/outputs
+
+.venv
+.python-version

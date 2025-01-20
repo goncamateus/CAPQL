@@ -98,7 +98,6 @@ class TrainingProcess:
             updates = self.updates
             epi_start = self.epi_start
             i_episode = self.i_episode
-
             while not done:
                 # pick a weight
                 w = self.sampler.sample(1).view(-1)
@@ -121,7 +120,7 @@ class TrainingProcess:
                     self.writer.add_scalar('loss/critic_2', critic_2_loss, updates)
                     self.writer.add_scalar('loss/policy', policy_loss, updates)
 
-                next_state, reward, done, _ = self.env.step(action) # Step        
+                next_state, reward, done, info = self.env.step(action) # Step        
                 episode_steps += 1
                 total_numsteps += 1
                 episode_reward += np.sum(reward @ w.numpy())
@@ -134,10 +133,12 @@ class TrainingProcess:
 
             if total_numsteps > self.config.training.num_steps:
                 break
-
+            
+            self.writer.add_scalar("Final Position", info['x_position'], total_numsteps)
             self.writer.add_scalar('reward/train', episode_reward, total_numsteps)
             logging.info("Episode: {}, total numsteps: {}, episode steps: {}, reward: {}".format(i_episode, total_numsteps, episode_steps, round(episode_reward, 2)))
-
+            logging.info(f"Final Position: {info['x_position']}")
+            
             if i_episode % 10 == 0 and self.config.training.eval is True:
                 avg_rand_w_reward = 0.
                 episodes = 10

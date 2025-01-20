@@ -1,61 +1,59 @@
 import sys
+
 # sys.modules[__name__]
 from gym.envs.mujoco.hopper_v3 import HopperEnv
 from gym.envs.mujoco.walker2d_v3 import Walker2dEnv
 from gym.envs.mujoco.half_cheetah_v3 import HalfCheetahEnv
-from gym.envs.mujoco.ant_v3  import AntEnv
+from gym.envs.mujoco.ant_v3 import AntEnv
 from gym.envs.mujoco.humanoid_v3 import HumanoidEnv
 from gym.envs.mujoco.swimmer_v3 import SwimmerEnv
 import numpy as np
 import gym
 
+
 def register_env():
     try:
         gym.envs.register(
-            id='HopperM-v0',
-            entry_point='envs.env:HopperEnv_m',
+            id="HopperM-v0",
+            entry_point="envs.env:HopperEnv_m",
             max_episode_steps=1000,
         )
     except Exception as err:
-        print(f"Unexpected {err=}, {type(err)=}")
-    
-    try:
-        gym.envs.register(
-            id='Walker2dM-v0',
-            entry_point='envs.env:Walker2dEnv_m',
-            max_episode_steps=1000,
-        )
-    except Exception as err:
-        print(f"Unexpected {err=}, {type(err)=}")
+        print(f"Unexpected {err}, {type(err)}")
 
     try:
         gym.envs.register(
-            id='HalfCheetahM-v0',
-            entry_point='envs.env:HalfCheetahEnv_m',
+            id="Walker2dM-v0",
+            entry_point="envs.env:Walker2dEnv_m",
+            max_episode_steps=1000,
+        )
+    except Exception as err:
+        print(f"Unexpected {err}, {type(err)}")
+
+    try:
+        gym.envs.register(
+            id="HalfCheetahM-v0",
+            entry_point="envs.env:HalfCheetahEnv_m",
             max_episode_steps=1000,
             reward_threshold=4800.0,
         )
     except Exception as err:
-        print(f"Unexpected {err=}, {type(err)=}")
+        print(f"Unexpected {err}, {type(err)}")
 
-   
     try:
         gym.envs.register(
-            id='HumanoidEnvM-v0',
-            entry_point='envs.env:HumanoidEnv_m',
+            id="HumanoidEnvM-v0",
+            entry_point="envs.env:HumanoidEnv_m",
             max_episode_steps=1000,
         )
     except Exception as err:
-        print(f"Unexpected {err=}, {type(err)=}")
-
-
+        print(f"Unexpected {err}, {type(err)}")
 
 
 class HopperEnv_m(HopperEnv):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.rwd_dim = 3
-
 
     def step(self, action):
         x_position_before = self.sim.data.qpos[0]
@@ -65,7 +63,7 @@ class HopperEnv_m(HopperEnv):
 
         # control cost is positive
         ctrl_cost = self.control_cost(action)
-        
+
         forward_reward = self._forward_reward_weight * x_velocity
         healthy_reward = self.healthy_reward
 
@@ -81,8 +79,9 @@ class HopperEnv_m(HopperEnv):
         }
 
         reward = np.array([forward_reward, healthy_reward, -costs])
-        
+
         return observation, reward, done, info
+
 
 class Walker2dEnv_m(Walker2dEnv):
     def __init__(self, **kwargs):
@@ -112,7 +111,7 @@ class Walker2dEnv_m(Walker2dEnv):
         }
 
         reward = np.array([forward_reward, healthy_reward, -costs])
-        
+
         return observation, reward, done, info
 
 
@@ -127,24 +126,24 @@ class HalfCheetahEnv_m(HalfCheetahEnv):
         x_position_after = self.sim.data.qpos[0]
         x_velocity = (x_position_after - x_position_before) / self.dt
         # control cost is positive
-        ctrl_cost = self.control_cost(action)
-        forward_reward = self._forward_reward_weight * x_velocity
+        ctrl_cost = self.control_cost(action) / 16
+        forward_reward = self._forward_reward_weight * x_velocity / 16
         observation = self._get_obs()
-
 
         observation = self._get_obs()
         done = False
 
         info = {
             "x_position": x_position_after,
-            "x_velocity": x_velocity,
+            "x_velocity": x_velocity*16,
             "reward_run": forward_reward,
-            "reward_ctrl": -ctrl_cost,
+            "reward_ctrl": ctrl_cost*16,
         }
 
-        reward = np.array([forward_reward, -ctrl_cost])
-        
+        reward = np.array([forward_reward, 1 - ctrl_cost])
+
         return observation, reward, done, info
+
 
 class HumanoidEnv_m(HumanoidEnv):
     def __init__(self, **kwargs):
@@ -187,6 +186,7 @@ class HumanoidEnv_m(HumanoidEnv):
         reward = np.array([forward_reward, healthy_reward, -ctrl_cost, -contact_cost])
 
         return observation, reward, done, info
+
 
 def mass_center(model, sim):
     mass = np.expand_dims(model.body_mass, axis=1)
